@@ -15,6 +15,8 @@ using System.Windows.Shapes;
 
 using System.Windows.Controls.Ribbon;
 using HtmlAgilityPack;
+using System.Threading;
+using System.ComponentModel;
 
 namespace TBS
 {
@@ -24,18 +26,31 @@ namespace TBS
     public partial class MainWindow : Window
     {
         private string PollAdress = "http://topsport.betgames.tv/ext/game/results/topsport/";
-        private int PollTimeout = 5000;
         private string TableId = "table";
-
+        private int PollTimeout = 300000;
+        private readonly BackgroundWorker Poll;
         private Poller Poller;
 
         public MainWindow()
         {
             InitializeComponent();
-            
+
+            Poll = new BackgroundWorker();
+            Poll.WorkerSupportsCancellation = true;
+            Poll.DoWork += Poll_DoWork;
+            Poll.RunWorkerCompleted += Poll_RunWorkerCompleted;
+
             Poller = new Poller(PollAdress, TableId, PollTimeout);
-            
-            this.DataContext = Poller;
+            DataContext = Poller;
+
+            List<string> tmp = new List<string>();
+
+            foreach (Roll roll in Poller.RollList)
+            {
+                tmp.Add(String.Join(" ", roll.HitList.ToArray()));
+            }
+
+            RollList.ItemsSource = tmp;
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
@@ -45,22 +60,37 @@ namespace TBS
 
         private void TBS_ContentRendered(object sender, EventArgs e)
         {
-            StatusState.Content = "Waiting...";
-            Progress.Value = 100;
-
-            
-
-            StatusState.Content = "Waiting...";
-            Progress.Value = 0;
+            Poll.RunWorkerAsync();
         }
 
-        private void Test_Click(object sender, RoutedEventArgs e)
+        private void Refresh_Click(object sender, RoutedEventArgs e)
         {
-            Poller.RefreshList();
-            this.DataContext = null;
-            this.DataContext = Poller;
-            MessageBox.Show("Updated");
+            Poller.Process(true, true);
+            DataContext = Poller;
         }
 
+
+        private void Poll_DoWork(object sender, DoWorkEventArgs e)
+        {
+            // run all background tasks here
+            if (Poll.CancellationPending)
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            Thread.Sleep(100);
+            Poller.Process(false, true);
+        }
+
+        private void Poll_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            //update ui once worker complete his work
+            DataContext = Poller;
+            Poll.RunWorkerAsync();
+        }
+        
     }
+
+
 }
