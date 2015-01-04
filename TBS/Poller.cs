@@ -12,13 +12,17 @@ namespace TBS
 {
     class Poller : INotifyPropertyChanged
     {
-        private string _address;
-        private string _status;
-        private string _table;
-        private int _timeout;
-        private int _elapsed;
+        private string _address = "http://topsport.betgames.tv/ext/game/results/topsport/";
+        private string _status = "Loading...";
+        private string _tableId = "table";
+        private int _timeout = 300000;
+        private int _elapsed = 0;
+        private ObservableCollection<Roll> _rollList = new ObservableCollection<Roll>();
+        private Dictionary<int, int> _trackList = new Dictionary<int, int>();
 
-        public String PollAdress
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public String PollAddress
         {
             get { return _address; }
             set { _address = value; OnPropertyChanged("PollAddress"); }
@@ -26,8 +30,8 @@ namespace TBS
 
         public String TableId
         {
-            get { return _table; }
-            set { _table = value; OnPropertyChanged("TableId"); }
+            get { return _tableId; }
+            set { _tableId = value; OnPropertyChanged("TableId"); }
         }
 
         public int PollTimeout
@@ -48,10 +52,18 @@ namespace TBS
             set { _status = value; OnPropertyChanged("PollStatus"); }
         }
 
-        public ObservableCollection<Roll> RollList = new ObservableCollection<Roll>();
+        public ObservableCollection<Roll> RollList
+        {
+            get { return _rollList; }
+            set { _rollList = value; OnPropertyChanged("RollList"); }
+        }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
+        public Dictionary<int, int> TrackList
+        {
+            get { return _trackList; }
+            set { _trackList = value; OnPropertyChanged("TrackList"); }
+        }
+        
         protected void OnPropertyChanged(string name)
         {
             if (PropertyChanged != null)
@@ -60,13 +72,12 @@ namespace TBS
             }
         }
 
-        public Poller(string address, string table, int timeout = 1000)
+        public Poller()
         {
-            PollAdress = address;
-            TableId = table;
-            PollTimeout = timeout;
-            PollTimeElapsed = 0;
-
+            for (int i = 1; i <= 42; i++)
+            {
+                TrackList[i] = 0;
+            }
             Process(true);
         }
 
@@ -78,8 +89,10 @@ namespace TBS
             }
             else
             {
+                //update status
                 PollStatus = "Waiting...";
                 PollTimeElapsed = PollTimeElapsed + 100;
+                
                 if (PollTimeElapsed == PollTimeout)
                 {
                     RequestData(first);
@@ -100,37 +113,34 @@ namespace TBS
             //update status
             PollStatus = "Requesting data...";
 
-            HtmlDocument document = new HtmlWeb().Load(PollAdress + string.Join("-", date) + "/1");
+            HtmlWeb web = new HtmlWeb();
+            HtmlDocument document = web.Load(PollAddress + string.Join("-", date) + "/1");
             HtmlNode table = document.GetElementbyId(TableId).SelectSingleNode("//tbody");
 
             //update status
             PollStatus = "Parsing data...";
 
-            foreach (HtmlNode tr in table.SelectNodes("tr"))
+            foreach (HtmlNode td in table.SelectNodes("tr").Elements("td").Skip(1).Where(x => x.SelectSingleNode("span") != null))
             {
-                foreach (HtmlNode td in tr.SelectNodes("td").Skip(1))
+                Roll roll = new Roll(td.SelectNodes("span").Select(s => int.Parse(s.SelectSingleNode("span").InnerText)).ToList());
+
+                PollStatus = "Updataing data...";
+
+                if (first == true && RollList.Count > 0)
                 {
-                    if (td.SelectSingleNode("span") != null)
+                    if (!Enumerable.SequenceEqual(RollList.First().HitList, roll.HitList))
                     {
-                        List<int> hitList = new List<int>();
-                        
-                        foreach (HtmlNode span in td.SelectNodes("span"))
-                        {
-                            hitList.Add(System.Int32.Parse(span.SelectSingleNode("span").InnerText));
-                        }
-
-                        Roll roll = new Roll() { HitList = hitList };
-
-                        PollStatus = "Updataing data...";
-                        
-                        if (first == true && RollList.First() != roll)
-                        {
-                            RollList.Insert(0, roll);
-                            break;
-                        }
-
-                        RollList.Add(roll);
+                        App.Current.Dispatcher.Invoke((Action)delegate { RollList.Insert(0, roll); });
                     }
+                    break;
+                }
+                RollList.Add(roll);
+            }
+
+            foreach (Roll roll in RollList.Reverse()) {
+                for (int i = 1; i <= roll.MissList.Count; i++)
+                {
+                    TrackList[i] = (roll.MissList[i] == 1 ? TrackList[i] + 1 : 0);
                 }
             }
         }

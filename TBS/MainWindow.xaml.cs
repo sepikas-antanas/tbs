@@ -25,9 +25,6 @@ namespace TBS
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string PollAdress = "http://topsport.betgames.tv/ext/game/results/topsport/";
-        private string TableId = "table";
-        private int PollTimeout = 300000;
         private readonly BackgroundWorker Poll;
         private Poller Poller;
 
@@ -40,17 +37,8 @@ namespace TBS
             Poll.DoWork += Poll_DoWork;
             Poll.RunWorkerCompleted += Poll_RunWorkerCompleted;
 
-            Poller = new Poller(PollAdress, TableId, PollTimeout);
+            Poller = new Poller();
             DataContext = Poller;
-
-            List<string> tmp = new List<string>();
-
-            foreach (Roll roll in Poller.RollList)
-            {
-                tmp.Add(String.Join(" ", roll.HitList.ToArray()));
-            }
-
-            RollList.ItemsSource = tmp;
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
@@ -68,7 +56,6 @@ namespace TBS
             Poller.Process(true, true);
             DataContext = Poller;
         }
-
 
         private void Poll_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -89,8 +76,26 @@ namespace TBS
             DataContext = Poller;
             Poll.RunWorkerAsync();
         }
-        
+
+        private void Stop_Click(object sender, RoutedEventArgs e)
+        {
+            //stop polling
+            //destroy Polller
+        }
+
+        private void Continue_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Start_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void UpdatePollTimeout_Click(object sender, RoutedEventArgs e)
+        {
+            //call update login
+        }
     }
-
-
 }

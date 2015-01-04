@@ -7,34 +7,80 @@
         WindowStartupLocation="CenterScreen" 
         WindowState="Maximized" 
         ContentRendered="TBS_ContentRendered">
-    <Window.Resources>
-        <local:ListToStringConverter x:Key="ListToStringConverter" />
-    </Window.Resources>
+    
     <DockPanel>
         <Ribbon Name="Ribbon" DockPanel.Dock="Top">
             <Ribbon.ApplicationMenu>
                 <RibbonApplicationMenu Label="Wat?">
                     <RibbonApplicationMenu.AuxiliaryPaneContent>
-                        AuxiliaryPaneContent
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                <TextBlock Text="Table ID:"/>
+                                <TextBlock Text="{Binding TableId}"/>
+                            </StackPanel>
+                            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                <TextBlock Text="Poll Address:"/>
+                                <TextBlock Text="{Binding PollAddress}"/>
+                            </StackPanel>
+                        </DockPanel>
                     </RibbonApplicationMenu.AuxiliaryPaneContent>
                     <RibbonApplicationMenu.FooterPaneContent>
-                        FooterPaneContent
+                        2015
                     </RibbonApplicationMenu.FooterPaneContent>
                     <RibbonApplicationMenuItem Header="Exit" Name="Exit" Click="Exit_Click"/>
                 </RibbonApplicationMenu>
             </Ribbon.ApplicationMenu>
             <RibbonTab Header="Settings">
-                <RibbonGroup Margin="0,1" Width="184" Header="Poll Options">
+                <RibbonGroup Width="180" Header="Poll Options">
                     <StackPanel>
-                        <!--<RibbonTextBox Label="Poll Speed"  Width="Auto" Name="PollSpeed"></RibbonTextBox>-->
-                        <!--<RibbonComboBox Label="Poll Speed" Width="Auto" Name="PollSpeed"></RibbonComboBox>-->
-                        <RibbonButton 
-                            Name="Refresh"           
-                            Label="Refresh?" 
-                            Click="Refresh_Click" 
-                            BorderBrush="#FF555555"
-                        />
+                        <RibbonTextBox 
+                            Margin="2,2,2,2"
+                            Label="Poll Timeout:"
+                            Text="{Binding PollTimeout, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+                        <RibbonButton Label="Update" 
+                                Name="UpdatePollTimeout"
+                                BorderThickness="1" 
+                                BorderBrush="#FF423E3E" 
+                                Margin="2,2,2,2" Click="UpdatePollTimeout_Click" />
                     </StackPanel>
+                </RibbonGroup>
+                <RibbonGroup Header="Manual Control">
+                    <StackPanel DockPanel.Dock="Left" Width="100">
+                        <RibbonButton
+                                BorderThickness="1" BorderBrush="#FF423E3E"
+                                Margin="2,2,2,2"
+                                Width="Auto"
+                                Name="Start"           
+                                Label="Start" 
+                                Click="Start_Click"/>
+                        <RibbonButton
+                                BorderThickness="1" BorderBrush="#FF423E3E"
+                                Margin="2,2,2,2"
+                                Width="Auto"
+                                Name="Stop"           
+                                Label="Stop" 
+                                Click="Stop_Click" />
+                        <RibbonButton
+                                BorderThickness="1" BorderBrush="#FF423E3E"
+                                Margin="2,2,2,2"
+                                Width="Auto"
+                                Name="Refresh"           
+                                Label="Refresh" 
+                                Click="Refresh_Click" />
+                    </StackPanel>
+                </RibbonGroup>
+                <RibbonGroup Width="184" Header="Guess Options">
+                    <StackPanel>
+                        <RibbonTextBox Label="Guess Range" Margin="2,2,2,2" />
+                        <RibbonButton 
+                                BorderThickness="1" 
+                                BorderBrush="#FF423E3E"
+                                Label="Update" 
+                                Margin="2,2,2,2" />
+                    </StackPanel>
+                </RibbonGroup>
+                <RibbonGroup Width="184" Header="Color Options">
+
                 </RibbonGroup>
             </RibbonTab>
         </Ribbon>
@@ -47,118 +93,84 @@
                 <StatusBarItem HorizontalAlignment="Right">
                     <StackPanel Orientation="Horizontal">
                         <StatusBarItem 
-                            Name="StatusState" 
-                            Content="{Binding PollStatus}"
-                        />
+                                Name="StatusState" 
+                                Content="{Binding PollStatus}" />
                         <StatusBarItem>
                             <ProgressBar 
-                                Name="Progress" 
-                                Minimum="0"
-                                Maximum="{Binding PollTimeout}"
-                                Width="250"  
-                                Height="10" 
-                                HorizontalAlignment="Right"
-                                Value="{Binding PollTimeElapsed}"
-                            />
+                                    Name="Progress" 
+                                    Minimum="0"
+                                    Maximum="{Binding PollTimeout}"
+                                    Width="250"  
+                                    Height="10" 
+                                    HorizontalAlignment="Right"
+                                    Value="{Binding PollTimeElapsed}" />
                         </StatusBarItem>
                     </StackPanel>
                 </StatusBarItem>
             </StatusBar>
             <Grid Grid.Row="0" Height="Auto" Width="Auto">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="75*" />
-                    <ColumnDefinition Width="25*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="270" />
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
                 <Grid Grid.Column="0" />
-                    <ListBox 
+                <ListBox 
                         Grid.Column="1" 
+                        Grid.RowSpan="2"
                         Height="Auto" 
                         Width="Auto" 
                         Name="RollList" 
-                        ItemsSource="{Binding RollList, Converter={StaticResource ListToStringConverter}}"
-                    />
-                <Grid Grid.Column="0">
-                    <TextBlock Background="Red" Text="{Binding RollList}" />  
+                        ItemsSource="{Binding RollList}" BorderBrush="{x:Null}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left" FontSize="20" Width="30" FontFamily="Arial" TextAlignment="Center" Text="{Binding HitList[0]}" Margin="2,2,2,2" />
+                                <TextBlock DockPanel.Dock="Left" FontSize="20" Width="30" FontFamily="Arial" TextAlignment="Center" Text="{Binding HitList[1]}" Margin="2,2,2,2" />
+                                <TextBlock DockPanel.Dock="Left" FontSize="20" Width="30" FontFamily="Arial" TextAlignment="Center" Text="{Binding HitList[2]}" Margin="2,2,2,2" />
+                                <TextBlock DockPanel.Dock="Left" FontSize="20" Width="30" FontFamily="Arial" TextAlignment="Center" Text="{Binding HitList[3]}" Margin="2,2,2,2" />
+                                <TextBlock DockPanel.Dock="Left" FontSize="20" Width="30" FontFamily="Arial" TextAlignment="Center" Text="{Binding HitList[4]}" Margin="2,2,2,2" />
+                                <TextBlock DockPanel.Dock="Left" FontSize="20" Width="30" FontFamily="Arial" TextAlignment="Center" Text="{Binding HitList[5]}" Margin="2,2,2,2" />
+                                <TextBlock DockPanel.Dock="Left" FontSize="20" Width="30" FontFamily="Arial" TextAlignment="Center" Text="{Binding HitList[6]}" Margin="2,2,2,2" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <Grid Grid.Column="0" Grid.Row="0">
+                    <!--
+                    <Grid.Resources>
+                        <DataTemplate x:Key="Stats">
+                            <DockPanel Width="20">
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding Key}" />
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding Value}" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </Grid.Resources>
+                    -->
+                    <ListBox 
+                            HorizontalContentAlignment="Stretch"
+                            Width="Auto" 
+                            Height="50"
+                            ItemsSource="{Binding TrackList}">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"></StackPanel>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Key}" Width="20" TextAlignment="Center"/>
+                                    <TextBlock Text="{Binding Value}" Width="20" TextAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </Grid>
             </Grid>
-            
-            <!--
-            <Grid Grid.Row="0" Height="Auto" Width="Auto">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height=".5*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="75*" />
-                    <ColumnDefinition Width="25*" />
-                </Grid.ColumnDefinitions>
-                <Grid Grid.Column="1" Grid.RowSpan="2" Background="Black">
-                    
-                </Grid>
-
-                
-                
-                <Grid Grid.Row="0" Grid.Column="0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    
-                    <Label Content="1" Grid.Column="2" />
-                </Grid>
-            </Grid>
-            -->
         </Grid>
     </DockPanel>
 </Window>
