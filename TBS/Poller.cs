@@ -17,8 +17,10 @@ namespace TBS
         private string _tableId = "table";
         private int _timeout = 300000;
         private int _elapsed = 0;
+        private int _guessRange = 100;
+
         private ObservableCollection<Roll> _rollList = new ObservableCollection<Roll>();
-        private Dictionary<int, int> _trackList = new Dictionary<int, int>();
+        private ObservableCollection<Guess> _trackList = new ObservableCollection<Guess>();
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -58,11 +60,18 @@ namespace TBS
             set { _rollList = value; OnPropertyChanged("RollList"); }
         }
 
-        public Dictionary<int, int> TrackList
+        public ObservableCollection<Guess> TrackList
         {
             get { return _trackList; }
             set { _trackList = value; OnPropertyChanged("TrackList"); }
         }
+
+        public int Guessrange
+        {
+            get { return _guessRange; }
+            set { _guessRange = value; OnPropertyChanged("GuessRange"); }
+        }
+
         
         protected void OnPropertyChanged(string name)
         {
@@ -74,10 +83,7 @@ namespace TBS
 
         public Poller()
         {
-            for (int i = 1; i <= 42; i++)
-            {
-                TrackList[i] = 0;
-            }
+            UpdateTrackList();
             Process(true);
         }
 
@@ -136,12 +142,31 @@ namespace TBS
                 }
                 RollList.Add(roll);
             }
-
-            foreach (Roll roll in RollList.Reverse()) {
-                for (int i = 1; i <= roll.MissList.Count; i++)
+            
+            //odd
+            if (RollList.First().HitList.First() % 2 != 0)
+            {
+                foreach (Guess guess in TrackList)
                 {
-                    TrackList[i] = (roll.MissList[i] == 1 ? TrackList[i] + 1 : 0);
+                    guess.Count = (guess.Value == 2 ? guess.Count + 1 : 0);
                 }
+            }
+            else
+            //even
+            {
+                foreach (Guess guess in TrackList)
+                {
+                    guess.Count = (guess.Value == 1 ? guess.Count + 1 : 0);
+                }
+            }
+        }
+
+        public void UpdateTrackList()
+        {
+            Random rand = new Random();
+            for (int i = 1; i <= Guessrange; i++)
+            {
+                TrackList.Add(new Guess(i, rand.Next(1, 3), 0));
             }
         }
     }

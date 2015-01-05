@@ -95,7 +95,13 @@ namespace TBS
 
         private void UpdatePollTimeout_Click(object sender, RoutedEventArgs e)
         {
-            //call update login
+            PollTimeout.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+        }
+
+        private void RibbonButton_Click(object sender, RoutedEventArgs e)
+        {
+            GuessRange.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+            Poller.UpdateTrackList();
         }
     }
 }

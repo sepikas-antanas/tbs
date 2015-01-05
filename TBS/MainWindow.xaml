@@ -34,9 +34,10 @@
                 <RibbonGroup Width="180" Header="Poll Options">
                     <StackPanel>
                         <RibbonTextBox 
+                            Name="PollTimeout"
                             Margin="2,2,2,2"
                             Label="Poll Timeout:"
-                            Text="{Binding PollTimeout, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+                            Text="{Binding PollTimeout, UpdateSourceTrigger=Explicit}"/>
                         <RibbonButton Label="Update" 
                                 Name="UpdatePollTimeout"
                                 BorderThickness="1" 
@@ -71,12 +72,12 @@
                 </RibbonGroup>
                 <RibbonGroup Width="184" Header="Guess Options">
                     <StackPanel>
-                        <RibbonTextBox Label="Guess Range" Margin="2,2,2,2" />
+                        <RibbonTextBox Label="Guess Range" Name="GuessRange" Text="{Binding Guessrange, UpdateSourceTrigger=Explicit}" Margin="2,2,2,2" />
                         <RibbonButton 
                                 BorderThickness="1" 
                                 BorderBrush="#FF423E3E"
                                 Label="Update" 
-                                Margin="2,2,2,2" />
+                                Margin="2,2,2,2" Click="RibbonButton_Click" />
                     </StackPanel>
                 </RibbonGroup>
                 <RibbonGroup Width="184" Header="Color Options">
@@ -114,8 +115,8 @@
                     <ColumnDefinition Width="270" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="50" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="200" />
                 </Grid.RowDefinitions>
                 <Grid Grid.Column="0" />
                 <ListBox 
@@ -140,35 +141,43 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
                 <Grid Grid.Column="0" Grid.Row="0">
-                    <!--
-                    <Grid.Resources>
-                        <DataTemplate x:Key="Stats">
-                            <DockPanel Width="20">
-                                <TextBlock DockPanel.Dock="Left" Text="{Binding Key}" />
-                                <TextBlock DockPanel.Dock="Left" Text="{Binding Value}" />
-                            </DockPanel>
-                        </DataTemplate>
-                    </Grid.Resources>
-                    -->
-                    <ListBox 
-                            HorizontalContentAlignment="Stretch"
-                            Width="Auto" 
-                            Height="50"
-                            ItemsSource="{Binding TrackList}">
-                        <ListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal"></StackPanel>
-                            </ItemsPanelTemplate>
-                        </ListBox.ItemsPanel>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel>
-                                    <TextBlock Text="{Binding Key}" Width="20" TextAlignment="Center"/>
-                                    <TextBlock Text="{Binding Value}" Width="20" TextAlignment="Center" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding TrackList}" AlternationCount="2">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Name="GuessItem" Margin="2,2,2,2">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition />
+                                            <RowDefinition />
+                                            <RowDefinition />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition MinWidth="35" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Grid.Row="0" Text="{Binding Index}" Width="30" TextAlignment="Center" FontSize="15" />
+                                        <TextBlock Grid.Column="0" Grid.Row="1" Text="{Binding Value}" Width="30" TextAlignment="Center" FontSize="15" />
+                                        <TextBlock Grid.Column="0" Grid.Row="2" Text="{Binding Count}" Width="30" TextAlignment="Center" FontSize="15" />
+                                    </Grid>
+                                    <DataTemplate.Triggers>
+                                        <Trigger Property="ItemsControl.AlternationIndex" Value="0">
+                                            <Setter Property="Background" Value="Blue" TargetName="GuessItem"/>
+                                        </Trigger>
+                                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                            <Setter Property="Background" Value="Red" TargetName="GuessItem"/>
+                                        </Trigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+                <Grid Grid.Column="0" Grid.Row="1">
+                    <TextBlock Text="Statistics"/>
                 </Grid>
             </Grid>
         </Grid>
