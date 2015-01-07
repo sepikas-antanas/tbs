@@ -15,6 +15,7 @@ Global
 		{0A7316F9-320B-434E-8C3D-3A3CFD197C65}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A7316F9-320B-434E-8C3D-3A3CFD197C65}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A7316F9-320B-434E-8C3D-3A3CFD197C65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A7316F9-320B-434E-8C3D-3A3CFD197C65}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

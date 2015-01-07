@@ -12,67 +12,76 @@ namespace TBS
 {
     class Poller : INotifyPropertyChanged
     {
+        //private int[,] _trackList = new int[1000000, 2];
+        //private Guess[] _trackList = new Guess[1000000];
+        //private Roll[] _rollList = new Roll[10];
         private string _address = "http://topsport.betgames.tv/ext/game/results/topsport/";
-        private string _status = "Loading...";
         private string _tableId = "table";
+
+        private string _status = "Loading...";
+        public String PollStatus
+        {
+            get { return _status; }
+            set { _status = value; OnPropertyChanged("PollStatus"); }
+        }
+        
         private int _timeout = 300000;
-        private int _elapsed = 0;
-        private int _guessRange = 100;
-
-        private ObservableCollection<Roll> _rollList = new ObservableCollection<Roll>();
-        private ObservableCollection<Guess> _trackList = new ObservableCollection<Guess>();
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public String PollAddress
-        {
-            get { return _address; }
-            set { _address = value; OnPropertyChanged("PollAddress"); }
-        }
-
-        public String TableId
-        {
-            get { return _tableId; }
-            set { _tableId = value; OnPropertyChanged("TableId"); }
-        }
-
         public int PollTimeout
         {
             get { return _timeout; }
             set { _timeout = value; OnPropertyChanged("PollTimeout"); }
         }
 
+        private int _elapsed = 0;
         public int PollTimeElapsed
         {
             get { return _elapsed; }
             set { _elapsed = value; OnPropertyChanged("PollTimeElapsed"); }
         }
 
-        public String PollStatus
+        private int _guessRange = 1000000;
+        public int GuessRange
         {
-            get { return _status; }
-            set { _status = value; OnPropertyChanged("PollStatus"); }
+            get { return _guessRange; }
+            set { _guessRange = value; OnPropertyChanged("GuessRange"); }
         }
 
-        public ObservableCollection<Roll> RollList
+        private int _start = 0;
+        public int Start
         {
-            get { return _rollList; }
-            set { _rollList = value; OnPropertyChanged("RollList"); }
+            get { return _start; }
+            set { _start = value; OnPropertyChanged("Start"); }
         }
 
+        private int _current = 100;
+        public int Current
+        {
+            get { return _current; }
+            set { _current = value; OnPropertyChanged("Current"); }
+        }
+
+        private ObservableCollection<Guess> _trackList = new ObservableCollection<Guess>();
         public ObservableCollection<Guess> TrackList
         {
             get { return _trackList; }
             set { _trackList = value; OnPropertyChanged("TrackList"); }
         }
 
-        public int Guessrange
+        private ObservableCollection<Roll> _rollList = new ObservableCollection<Roll>();
+        public ObservableCollection<Roll> RollList
         {
-            get { return _guessRange; }
-            set { _guessRange = value; OnPropertyChanged("GuessRange"); }
+            get { return _rollList; }
+            set { _rollList = value; OnPropertyChanged("RollList"); }
         }
 
-        
+        private Statistics _stat = new Statistics();
+        public Statistics Statistics
+        {
+            get { return _stat; }
+            set { _stat = value; OnPropertyChanged("Statistics"); }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name)
         {
             if (PropertyChanged != null)
@@ -107,67 +116,47 @@ namespace TBS
             }
         }
 
-        public void Stop()
-        {
-            PollStatus = "Process stoped.";
-        }
-
         private void RequestData(bool first = false)
         {
-            int[] date = { DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day };
-
-            //update status
             PollStatus = "Requesting data...";
-
             HtmlWeb web = new HtmlWeb();
-            HtmlDocument document = web.Load(PollAddress + string.Join("-", date) + "/1");
-            HtmlNode table = document.GetElementbyId(TableId).SelectSingleNode("//tbody");
-
-            //update status
-            PollStatus = "Parsing data...";
-
-            foreach (HtmlNode td in table.SelectNodes("tr").Elements("td").Skip(1).Where(x => x.SelectSingleNode("span") != null))
-            {
-                Roll roll = new Roll(td.SelectNodes("span").Select(s => int.Parse(s.SelectSingleNode("span").InnerText)).ToList());
-
-                PollStatus = "Updataing data...";
-
-                if (first == true && RollList.Count > 0)
-                {
-                    if (!Enumerable.SequenceEqual(RollList.First().HitList, roll.HitList))
-                    {
-                        App.Current.Dispatcher.Invoke((Action)delegate { RollList.Insert(0, roll); });
-                    }
-                    break;
-                }
-                RollList.Add(roll);
-            }
+            HtmlDocument document = web.Load(_address + DateTime.Now.Year + "-" + DateTime.Now.Month + "-" + DateTime.Now.Day + "/1");
+            HtmlNode table = document.GetElementbyId(_tableId).SelectSingleNode("//tbody");
+            HtmlNode _td;
             
-            //odd
-            if (RollList.First().HitList.First() % 2 != 0)
+            PollStatus = "Updataing data...";
+            for (int i = 0; i < 10; i++)
             {
-                foreach (Guess guess in TrackList)
-                {
-                    guess.Count = (guess.Value == 2 ? guess.Count + 1 : 0);
-                }
-            }
-            else
-            //even
-            {
-                foreach (Guess guess in TrackList)
-                {
-                    guess.Count = (guess.Value == 1 ? guess.Count + 1 : 0);
-                }
+                _td = table.SelectNodes("tr").Elements("td").Skip(1).Where(x => x.SelectSingleNode("span") != null).ToArray()[i];
+                RollList[i] = new Roll(_td.SelectNodes("span").Select(s => int.Parse(s.SelectSingleNode("span").InnerText)).ToList());
             }
         }
 
-        public void UpdateTrackList()
+        public void UpdateTrackList(bool _new = true)
         {
             Random rand = new Random();
-            for (int i = 1; i <= Guessrange; i++)
+
+            if (_new == true)
             {
-                TrackList.Add(new Guess(i, rand.Next(1, 3), 0));
+                TrackList = new ObservableCollection<Guess>();
+                //_trackList = new Guess[GuessRange];
+                //_trackList = new int[GuessRange,2];
             }
+
+            string[] values = {"≠", "="};
+
+            for (int i = 0; i < 100 ; i++) //_trackList.GetLength(0)
+            {
+                TrackList.Add(new Guess(i + 1, values[rand.Next(1, 3) - 1], 0));
+                //_trackList[i] = new Guess(i+1, values[rand.Next(1, 3) - 1], 0);
+                //_trackList[i, 0] = rand.Next(1, 3);
+                //_trackList[i, 1] = 0;
+            }
+        }
+
+        public void IncreaseTracList(int increment = 100)
+        {
+            Current = Current + increment;
         }
     }
 }

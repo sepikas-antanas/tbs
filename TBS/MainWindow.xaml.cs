@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+/*
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -12,7 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
+*/
 using System.Windows.Controls.Ribbon;
 using HtmlAgilityPack;
 using System.Threading;
@@ -26,7 +27,8 @@ namespace TBS
     public partial class MainWindow : Window
     {
         private readonly BackgroundWorker Poll;
-        private Poller Poller;
+        private BackgroundWorker TmpWorker;
+        private Poller Poller = new Poller();
 
         public MainWindow()
         {
@@ -34,11 +36,26 @@ namespace TBS
 
             Poll = new BackgroundWorker();
             Poll.WorkerSupportsCancellation = true;
-            Poll.DoWork += Poll_DoWork;
-            Poll.RunWorkerCompleted += Poll_RunWorkerCompleted;
+            
+            Poll.DoWork += delegate(object sender, DoWorkEventArgs e) 
+            {
+                if (Poll.CancellationPending)
+                {
+                    e.Cancel = true;
+                    return;
+                }
 
-            Poller = new Poller();
-            DataContext = Poller;
+                Thread.Sleep(100);
+                Poller.Process(false, true);
+            };
+
+            Poll.RunWorkerCompleted += delegate(object sender, RunWorkerCompletedEventArgs e) 
+            {
+                //RollList.ItemsSource = Poller.GetRollList();
+                //TrackList.ItemsSource = Poller.GetTrackList();
+                DataContext = Poller;
+                Poll.RunWorkerAsync();
+            };
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
@@ -48,7 +65,15 @@ namespace TBS
 
         private void TBS_ContentRendered(object sender, EventArgs e)
         {
-            Poll.RunWorkerAsync();
+            if (double.Parse(DateTime.Now.ToString("yyyyMMddHHmmssffff")) > double.Parse("201501092055118697"))
+            {
+                MessageBox.Show("TRIAL VERSION EXPIRED!");
+                Application.Current.Shutdown();
+            }
+            else
+            {
+                Poll.RunWorkerAsync();
+            }
         }
 
         private void Refresh_Click(object sender, RoutedEventArgs e)
@@ -57,51 +82,89 @@ namespace TBS
             DataContext = Poller;
         }
 
-        private void Poll_DoWork(object sender, DoWorkEventArgs e)
-        {
-            // run all background tasks here
-            if (Poll.CancellationPending)
-            {
-                e.Cancel = true;
-                return;
-            }
-
-            Thread.Sleep(100);
-            Poller.Process(false, true);
-        }
-
-        private void Poll_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            //update ui once worker complete his work
-            DataContext = Poller;
-            Poll.RunWorkerAsync();
-        }
-
-        private void Stop_Click(object sender, RoutedEventArgs e)
-        {
-            //stop polling
-            //destroy Polller
-        }
-
-        private void Continue_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void Start_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
         private void UpdatePollTimeout_Click(object sender, RoutedEventArgs e)
         {
-            PollTimeout.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+            TmpWorker = new BackgroundWorker();
+            TmpWorker.DoWork += delegate(object sender2, DoWorkEventArgs e2) 
+            {
+                PollTimeout.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+            };
+            TmpWorker.RunWorkerAsync();
         }
 
-        private void RibbonButton_Click(object sender, RoutedEventArgs e)
+        private void GuessRangeUpdate_Click(object sender, RoutedEventArgs e)
         {
-            GuessRange.GetBindingExpression(TextBox.TextProperty).UpdateSource();
-            Poller.UpdateTrackList();
+
+            TmpWorker = new BackgroundWorker();
+            TmpWorker.DoWork += delegate(object sender2, DoWorkEventArgs e2)
+            {
+                GuessRange.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+                Poller.UpdateTrackList();
+
+            };
+            TmpWorker.RunWorkerAsync();
+        }
+
+        private void TrackListScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (TrackListScroll.VerticalOffset == TrackListScroll.ScrollableHeight)
+            {
+                //increase limtit
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+    /**
+     * STATISTICS CLASS 
+     */
+    class Statistics : INotifyPropertyChanged
+    {
+        private int _recordValue = 0;
+        private int _recordCount = 0;
+        private int _recordEventCount = 0;
+        private int _recordOddCount = 0;
+        //private int _count = 0;
+
+        public int RecordValue
+        {
+            get { return _recordValue; }
+            set { _recordValue = value; OnPropertyChanged("RecordValue"); }
+        }
+
+        public int RecordCount
+        {
+            get { return _recordCount; }
+            set { _recordCount = value; OnPropertyChanged("RecordCount"); }
+        }
+
+        public int RecordEvenCount
+        {
+            get { return _recordEventCount; }
+            set { _recordEventCount = value; OnPropertyChanged("RecordEvenCount"); }
+        }
+
+        public int RecordOddCount
+        {
+            get { return _recordOddCount; }
+            set { _recordOddCount = value; OnPropertyChanged("RecordOddCount"); }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public void OnPropertyChanged(string name)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(name));
+            }
         }
     }
 }

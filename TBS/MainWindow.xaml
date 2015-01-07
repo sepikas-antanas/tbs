@@ -13,19 +13,23 @@
             <Ribbon.ApplicationMenu>
                 <RibbonApplicationMenu Label="Wat?">
                     <RibbonApplicationMenu.AuxiliaryPaneContent>
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                                <TextBlock Text="Table ID:"/>
-                                <TextBlock Text="{Binding TableId}"/>
-                            </StackPanel>
-                            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                                <TextBlock Text="Poll Address:"/>
-                                <TextBlock Text="{Binding PollAddress}"/>
-                            </StackPanel>
-                        </DockPanel>
+                        <WrapPanel>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                            </Grid>
+                            <TextBlock Grid.Row="0" Text="Table ID:"/>
+                            <TextBlock Grid.Row="1" Text="{Binding TableId}"/>
+                            <TextBlock Grid.Row="2" Text="Poll Address:"/>
+                            <TextBlock Grid.Row="3" Text="{Binding PollAddress}"/>
+                        </WrapPanel>
                     </RibbonApplicationMenu.AuxiliaryPaneContent>
                     <RibbonApplicationMenu.FooterPaneContent>
-                        2015
+                        TBS Limited
                     </RibbonApplicationMenu.FooterPaneContent>
                     <RibbonApplicationMenuItem Header="Exit" Name="Exit" Click="Exit_Click"/>
                 </RibbonApplicationMenu>
@@ -35,53 +39,49 @@
                     <StackPanel>
                         <RibbonTextBox 
                             Name="PollTimeout"
-                            Margin="2,2,2,2"
+                            Margin="0,2,2,0"
                             Label="Poll Timeout:"
                             Text="{Binding PollTimeout, UpdateSourceTrigger=Explicit}"/>
                         <RibbonButton Label="Update" 
                                 Name="UpdatePollTimeout"
                                 BorderThickness="1" 
                                 BorderBrush="#FF423E3E" 
-                                Margin="2,2,2,2" Click="UpdatePollTimeout_Click" />
-                    </StackPanel>
-                </RibbonGroup>
-                <RibbonGroup Header="Manual Control">
-                    <StackPanel DockPanel.Dock="Left" Width="100">
+                                Margin="0,2,2,0" Click="UpdatePollTimeout_Click" />
                         <RibbonButton
                                 BorderThickness="1" BorderBrush="#FF423E3E"
-                                Margin="2,2,2,2"
-                                Width="Auto"
-                                Name="Start"           
-                                Label="Start" 
-                                Click="Start_Click"/>
-                        <RibbonButton
-                                BorderThickness="1" BorderBrush="#FF423E3E"
-                                Margin="2,2,2,2"
-                                Width="Auto"
-                                Name="Stop"           
-                                Label="Stop" 
-                                Click="Stop_Click" />
-                        <RibbonButton
-                                BorderThickness="1" BorderBrush="#FF423E3E"
-                                Margin="2,2,2,2"
+                                Margin="0,2,2,0"
                                 Width="Auto"
                                 Name="Refresh"           
-                                Label="Refresh" 
+                                Label="Refresh Results" 
                                 Click="Refresh_Click" />
                     </StackPanel>
                 </RibbonGroup>
                 <RibbonGroup Width="184" Header="Guess Options">
                     <StackPanel>
-                        <RibbonTextBox Label="Guess Range" Name="GuessRange" Text="{Binding Guessrange, UpdateSourceTrigger=Explicit}" Margin="2,2,2,2" />
+                        <RibbonTextBox 
+                                Label="Guess Range" 
+                                Name="GuessRange"
+                                Text="{Binding Guessrange, UpdateSourceTrigger=Explicit}" 
+                                Margin="2,2,2,2" />
                         <RibbonButton 
                                 BorderThickness="1" 
                                 BorderBrush="#FF423E3E"
-                                Label="Update" 
-                                Margin="2,2,2,2" Click="RibbonButton_Click" />
+                                Label="Update"
+                                Name="GuessRangeUpdate"
+                                Margin="2,2,2,2" Click="GuessRangeUpdate_Click" />
                     </StackPanel>
                 </RibbonGroup>
-                <RibbonGroup Width="184" Header="Color Options">
-
+                <RibbonGroup Width="184" Header="Statistics">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock DockPanel.Dock="Left" FontSize="15" Text="Biggest ≠ Count: " />
+                            <TextBlock DockPanel.Dock="Left" FontSize="15" Text="{Binding Statistics.RecordOddCount}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock DockPanel.Dock="Left" FontSize="15" Text="Biggest = Count: " />
+                            <TextBlock DockPanel.Dock="Left" FontSize="15" Text="{Binding Statistics.RecordEvenCount}" />
+                        </StackPanel>
+                    </StackPanel>
                 </RibbonGroup>
             </RibbonTab>
         </Ribbon>
@@ -114,18 +114,12 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="270" />
                 </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="200" />
-                </Grid.RowDefinitions>
                 <Grid Grid.Column="0" />
                 <ListBox 
                         Grid.Column="1" 
-                        Grid.RowSpan="2"
                         Height="Auto" 
                         Width="Auto" 
-                        Name="RollList" 
-                        ItemsSource="{Binding RollList}" BorderBrush="{x:Null}">
+                        Name="RollList">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <DockPanel>
@@ -140,45 +134,40 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                <Grid Grid.Column="0" Grid.Row="0">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding TrackList}" AlternationCount="2">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Name="GuessItem" Margin="2,2,2,2">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition />
-                                            <RowDefinition />
-                                            <RowDefinition />
-                                        </Grid.RowDefinitions>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition MinWidth="35" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Grid.Row="0" Text="{Binding Index}" Width="30" TextAlignment="Center" FontSize="15" />
-                                        <TextBlock Grid.Column="0" Grid.Row="1" Text="{Binding Value}" Width="30" TextAlignment="Center" FontSize="15" />
-                                        <TextBlock Grid.Column="0" Grid.Row="2" Text="{Binding Count}" Width="30" TextAlignment="Center" FontSize="15" />
-                                    </Grid>
-                                    <DataTemplate.Triggers>
-                                        <Trigger Property="ItemsControl.AlternationIndex" Value="0">
-                                            <Setter Property="Background" Value="Blue" TargetName="GuessItem"/>
-                                        </Trigger>
-                                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                                            <Setter Property="Background" Value="Red" TargetName="GuessItem"/>
-                                        </Trigger>
-                                    </DataTemplate.Triggers>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </Grid>
-                <Grid Grid.Column="0" Grid.Row="1">
-                    <TextBlock Text="Statistics"/>
-                </Grid>
+                <ScrollViewer Name="TrackListScroll" VerticalScrollBarVisibility="Auto" Grid.Column="0" ScrollChanged="TrackListScroll_ScrollChanged">
+                    <ItemsControl Name="TrackList" ItemsSource="{Binding TrackList}" AlternationCount="2">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Name="GuessItem" Margin="2,2,2,2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition MinWidth="35" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Padding="0,2,2,0" Grid.Column="0" Grid.Row="0" Text="{Binding Index}" TextAlignment="Center" FontSize="15" />
+                                    <TextBlock Padding="0,2,2,0" Grid.Column="0" Grid.Row="2" Text="{Binding Count}" TextAlignment="Center" FontSize="15" />
+                                    <TextBlock Padding="0,2,2,0" Grid.Column="0" Grid.Row="1" Text="{Binding Value}" TextAlignment="Center" FontSize="15" />
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <Trigger Property="ItemsControl.AlternationIndex" Value="0">
+                                        <Setter Property="Background" Value="#FF81F581" TargetName="GuessItem"/>
+                                    </Trigger>
+                                    <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                        <Setter Property="Background" Value="#FF799BF5" TargetName="GuessItem"/>
+                                    </Trigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Grid>
         </Grid>
     </DockPanel>
