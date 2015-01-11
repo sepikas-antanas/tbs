@@ -18,6 +18,7 @@ using System.Windows.Controls.Ribbon;
 using HtmlAgilityPack;
 using System.Threading;
 using System.ComponentModel;
+using System.Windows.Data;
 
 namespace TBS
 {
@@ -27,35 +28,25 @@ namespace TBS
     public partial class MainWindow : Window
     {
         private readonly BackgroundWorker Poll;
+        private BackgroundWorker StatusWorker;
         private BackgroundWorker TmpWorker;
         private Poller Poller = new Poller();
+        private bool _instant = true;
 
         public MainWindow()
         {
             InitializeComponent();
 
+            StatusWorker = new BackgroundWorker();
+            StatusWorker.DoWork += StatusWorker_DoWork;
+            StatusWorker.RunWorkerCompleted += StatusWorker_RunWorkerCompleted;
+            StatusWorker.RunWorkerAsync();
+
+            //poll timeout loop
             Poll = new BackgroundWorker();
             Poll.WorkerSupportsCancellation = true;
-            
-            Poll.DoWork += delegate(object sender, DoWorkEventArgs e) 
-            {
-                if (Poll.CancellationPending)
-                {
-                    e.Cancel = true;
-                    return;
-                }
-
-                Thread.Sleep(100);
-                Poller.Process(false, true);
-            };
-
-            Poll.RunWorkerCompleted += delegate(object sender, RunWorkerCompletedEventArgs e) 
-            {
-                //RollList.ItemsSource = Poller.GetRollList();
-                //TrackList.ItemsSource = Poller.GetTrackList();
-                DataContext = Poller;
-                Poll.RunWorkerAsync();
-            };
+            Poll.DoWork += PollWorker_DoWork;
+            Poll.RunWorkerCompleted += PollWorker_RunWorkerCompleted;
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
@@ -65,7 +56,7 @@ namespace TBS
 
         private void TBS_ContentRendered(object sender, EventArgs e)
         {
-            if (double.Parse(DateTime.Now.ToString("yyyyMMddHHmmssffff")) > double.Parse("201501092055118697"))
+            if (double.Parse(DateTime.Now.ToString("yyyyMMddHHmmssffff")) > double.Parse("2015010122055118697"))
             {
                 MessageBox.Show("TRIAL VERSION EXPIRED!");
                 Application.Current.Shutdown();
@@ -78,93 +69,119 @@ namespace TBS
 
         private void Refresh_Click(object sender, RoutedEventArgs e)
         {
-            Poller.Process(true, true);
-            DataContext = Poller;
+            _instant = true;
         }
 
         private void UpdatePollTimeout_Click(object sender, RoutedEventArgs e)
         {
-            TmpWorker = new BackgroundWorker();
-            TmpWorker.DoWork += delegate(object sender2, DoWorkEventArgs e2) 
-            {
-                PollTimeout.GetBindingExpression(TextBox.TextProperty).UpdateSource();
-            };
-            TmpWorker.RunWorkerAsync();
+            PollTimeout.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+            _instant = true;
         }
 
         private void GuessRangeUpdate_Click(object sender, RoutedEventArgs e)
         {
-
             TmpWorker = new BackgroundWorker();
             TmpWorker.DoWork += delegate(object sender2, DoWorkEventArgs e2)
             {
                 GuessRange.GetBindingExpression(TextBox.TextProperty).UpdateSource();
-                Poller.UpdateTrackList();
-
+                DisplayRange.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+                Poller.GenerateTrackList();
+            };
+            TmpWorker.RunWorkerCompleted += delegate(object sender2, RunWorkerCompletedEventArgs e2)
+            {
+                _instant = true;
             };
             TmpWorker.RunWorkerAsync();
         }
 
-        private void TrackListScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        private void UpTrack_Click(object sender, RoutedEventArgs e)
         {
-            if (TrackListScroll.VerticalOffset == TrackListScroll.ScrollableHeight)
+            TmpWorker = new BackgroundWorker();
+            TmpWorker.DoWork += delegate(object sender2, DoWorkEventArgs e2)
             {
-                //increase limtit
+                Poller.From = (Poller.From - Poller.DisplayRange < 0 ? 0 : Poller.From - Poller.DisplayRange);
+                Poller.SelectPartTrackList();
+            };
+            TmpWorker.RunWorkerAsync();
+        }
+
+        private void DownTrack_Click(object sender, RoutedEventArgs e)
+        {
+            TmpWorker = new BackgroundWorker();
+            TmpWorker.DoWork += delegate(object sender2, DoWorkEventArgs e2)
+            {
+                Poller.From = (Poller.From + Poller.DisplayRange > Poller.GuessRange ? Poller.GuessRange : Poller.From + Poller.DisplayRange);
+                Poller.SelectPartTrackList();
+            };
+            TmpWorker.RunWorkerAsync();
+        }
+
+        private void PollWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            if (Poll.CancellationPending)
+            {
+                e.Cancel = true;
+                return;
             }
+
+            Thread.Sleep(100);
+            try
+            {
+                Poller.Process(_instant);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+        private void PollWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            _instant = false;
+            DataContext = Poller;
+            Poll.RunWorkerAsync();
+        }
+
+        private void StatusWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            Thread.Sleep(100);
+        }
+        private void StatusWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            DataContext = Poller;
+            StatusWorker.RunWorkerAsync();
         }
     }
 
-
-
-
-
-
-
-
-
-    /**
-     * STATISTICS CLASS 
-     */
-    class Statistics : INotifyPropertyChanged
+    public class StatusToVisibilityConverter : IValueConverter
     {
-        private int _recordValue = 0;
-        private int _recordCount = 0;
-        private int _recordEventCount = 0;
-        private int _recordOddCount = 0;
-        //private int _count = 0;
-
-        public int RecordValue
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            get { return _recordValue; }
-            set { _recordValue = value; OnPropertyChanged("RecordValue"); }
-        }
-
-        public int RecordCount
-        {
-            get { return _recordCount; }
-            set { _recordCount = value; OnPropertyChanged("RecordCount"); }
-        }
-
-        public int RecordEvenCount
-        {
-            get { return _recordEventCount; }
-            set { _recordEventCount = value; OnPropertyChanged("RecordEvenCount"); }
-        }
-
-        public int RecordOddCount
-        {
-            get { return _recordOddCount; }
-            set { _recordOddCount = value; OnPropertyChanged("RecordOddCount"); }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public void OnPropertyChanged(string name)
-        {
-            if (PropertyChanged != null)
+            string[] _statusArray = { "Loading...", "Requesting data...", "Updataing data...", "Generating new guess values...", "Checking guess values..." };
+            
+            if (_statusArray.Contains(value.ToString()))
             {
-                PropertyChanged(this, new PropertyChangedEventArgs(name));
+                return "Visible";
             }
+
+            return "Collapsed";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return "Loading...";
+        }
+    }
+
+    public class MilisecondsToMinutesConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return TimeSpan.FromMilliseconds(double.Parse(value.ToString())).TotalMinutes;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return TimeSpan.FromMinutes(double.Parse(value.ToString())).TotalMilliseconds;
         }
     }
 }

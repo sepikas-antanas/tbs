@@ -6,17 +6,25 @@ using HtmlAgilityPack;
 
 using System.ComponentModel;
 using System.Collections.ObjectModel;
-//using System.Timers;
+using MoreLinq;
 
 namespace TBS
 {
     class Poller : INotifyPropertyChanged
     {
-        //private int[,] _trackList = new int[1000000, 2];
-        //private Guess[] _trackList = new Guess[1000000];
-        //private Roll[] _rollList = new Roll[10];
         private string _address = "http://topsport.betgames.tv/ext/game/results/topsport/";
+        public String PollAddress
+        {
+            get { return _address; }
+            set { _address = value; OnPropertyChanged("PollAddress"); }
+        }
+
         private string _tableId = "table";
+        public String TableId
+        {
+            get { return _tableId; }
+            set { _tableId = value; OnPropertyChanged("TableId"); }
+        }
 
         private string _status = "Loading...";
         public String PollStatus
@@ -46,25 +54,33 @@ namespace TBS
             set { _guessRange = value; OnPropertyChanged("GuessRange"); }
         }
 
-        private int _start = 0;
-        public int Start
+        private int _displayRange = 2500;
+        public int DisplayRange
         {
-            get { return _start; }
-            set { _start = value; OnPropertyChanged("Start"); }
-        }
-
-        private int _current = 100;
-        public int Current
-        {
-            get { return _current; }
-            set { _current = value; OnPropertyChanged("Current"); }
+            get { return _displayRange; }
+            set { 
+                _displayRange = value;
+                Statistics.PageCount = TrackList.Count / DisplayRange;
+                OnPropertyChanged("DisplayRange");  
+            }
         }
 
         private ObservableCollection<Guess> _trackList = new ObservableCollection<Guess>();
         public ObservableCollection<Guess> TrackList
         {
             get { return _trackList; }
-            set { _trackList = value; OnPropertyChanged("TrackList"); }
+            set { 
+                _trackList = value;
+                Statistics.PageCount = TrackList.Count / DisplayRange;
+                OnPropertyChanged("TrackList"); 
+            }
+        }
+
+        private ObservableCollection<Guess> _partTrackList = new ObservableCollection<Guess>();
+        public ObservableCollection<Guess> PartTrackList
+        {
+            get { return _partTrackList; }
+            set { _partTrackList = value; OnPropertyChanged("PartTrackList"); }
         }
 
         private ObservableCollection<Roll> _rollList = new ObservableCollection<Roll>();
@@ -81,6 +97,13 @@ namespace TBS
             set { _stat = value; OnPropertyChanged("Statistics"); }
         }
 
+        private int _from = 0;
+        public int From
+        {
+            get { return _from; }
+            set { _from = value; OnPropertyChanged("From"); }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name)
         {
@@ -92,71 +115,128 @@ namespace TBS
 
         public Poller()
         {
-            UpdateTrackList();
-            Process(true);
+            GenerateTrackList();
         }
 
-        public void Process(bool instant = false, bool first = false)
+        public void Process(bool instant = false)
         {
             if (instant == true) {
-                RequestData(first);
+                PollTimeElapsed = 0;
+                RequestData();
+                return;
+            }
+            PollStatus = "Waiting...";
+            //PollTimeElapsed = PollTimeElapsed + 100;
+
+            if ((PollTimeElapsed = PollTimeElapsed + 100) == PollTimeout)
+            {
+                RequestData();
                 PollTimeElapsed = 0;
             }
-            else
-            {
-                //update status
-                PollStatus = "Waiting...";
-                PollTimeElapsed = PollTimeElapsed + 100;
-                
-                if (PollTimeElapsed == PollTimeout)
-                {
-                    RequestData(first);
-                    PollTimeElapsed = 0;
-                }
-            }
         }
 
-        private void RequestData(bool first = false)
+        private void RequestData()
         {
             PollStatus = "Requesting data...";
-            HtmlWeb web = new HtmlWeb();
-            HtmlDocument document = web.Load(_address + DateTime.Now.Year + "-" + DateTime.Now.Month + "-" + DateTime.Now.Day + "/1");
+            HtmlDocument document = new HtmlWeb().Load(_address + DateTime.Now.Year + "-" + DateTime.Now.Month + "-" + DateTime.Now.Day + "/1");
             HtmlNode table = document.GetElementbyId(_tableId).SelectSingleNode("//tbody");
-            HtmlNode _td;
-            
-            PollStatus = "Updataing data...";
-            for (int i = 0; i < 10; i++)
-            {
-                _td = table.SelectNodes("tr").Elements("td").Skip(1).Where(x => x.SelectSingleNode("span") != null).ToArray()[i];
-                RollList[i] = new Roll(_td.SelectNodes("span").Select(s => int.Parse(s.SelectSingleNode("span").InnerText)).ToList());
+
+            if (RollList.Count() > 0) {
+                HtmlNode _td = table.SelectNodes("tr").Elements("td").Skip(1).Where(x => x.SelectSingleNode("span") != null).Take(1).FirstOrDefault();
+                Roll tmpRoll = new Roll(_td.SelectNodes("span").Select(s => int.Parse(s.SelectSingleNode("span").InnerText)).ToList());
+                /*
+                if (tmpRoll.HitList.SequenceEqual(RollList.First().HitList)) == true)
+                {
+                    return;
+                }
+                 * */
             }
+
+            PollStatus = "Updataing data...";
+            RollList = new ObservableCollection<Roll>();
+            foreach (HtmlNode _td in table.SelectNodes("tr").Elements("td").Skip(1).Where(x => x.SelectSingleNode("span") != null).Take(10))
+            {
+                Roll roll = new Roll(_td.SelectNodes("span").Select(s => int.Parse(s.SelectSingleNode("span").InnerText)).ToList());
+                App.Current.Dispatcher.Invoke((Action)delegate { RollList.Add(roll); });   
+            }
+            
+            CheckGuessValues();
+            GenerateGuessValues();
+            SelectPartTrackList();
         }
 
-        public void UpdateTrackList(bool _new = true)
+        public void GenerateTrackList()
         {
             Random rand = new Random();
+            TrackList = new ObservableCollection<Guess>();
 
-            if (_new == true)
+            for (int i = 0; i < GuessRange; i++)
             {
-                TrackList = new ObservableCollection<Guess>();
-                //_trackList = new Guess[GuessRange];
-                //_trackList = new int[GuessRange,2];
-            }
-
-            string[] values = {"≠", "="};
-
-            for (int i = 0; i < 100 ; i++) //_trackList.GetLength(0)
-            {
-                TrackList.Add(new Guess(i + 1, values[rand.Next(1, 3) - 1], 0));
-                //_trackList[i] = new Guess(i+1, values[rand.Next(1, 3) - 1], 0);
-                //_trackList[i, 0] = rand.Next(1, 3);
-                //_trackList[i, 1] = 0;
+                TrackList.Add(new Guess(i + 1, rand.Next(1, 3), 0));
             }
         }
 
-        public void IncreaseTracList(int increment = 100)
+        public void SelectPartTrackList()
         {
-            Current = Current + increment;
+            PartTrackList = new ObservableCollection<Guess>(TrackList.Skip(From).Take(DisplayRange).OrderByDescending(g => g.Count));
+        }
+
+        private void GenerateGuessValues()
+        {
+            PollStatus = "Generating new guess values...";
+            Random rand = new Random();
+            foreach (Guess guess in TrackList)
+            {
+                guess.Value = rand.Next(1, 3);
+            }
+        }
+
+        private void CheckGuessValues()
+        {
+            PollStatus = "Checking guess values...";
+            //odd values
+            foreach (Guess guess in TrackList.Where(g => g.Value == 1))
+            {
+                guess.Count = (RollList.First().HitList.First() % 2 != 0 ? 0 : guess.Count + 1);
+            }
+            //even values
+            foreach (Guess guess in TrackList.Where(g => g.Value == 2))
+            {
+                guess.Count = (RollList.First().HitList.First() % 2 == 0 ? 0 : guess.Count + 1);
+            }
+
+            Statistics.RecordCount = TrackList.MaxBy(x => x.Count).Count;
         }
     }
 }
+
+/*
+//if first number is odd
+if (RollList.First().HitList.First() % 2 != 0)
+{
+    //odd values
+    foreach (Guess guess in TrackList.Where(g => g.Value == 1))
+    {
+        guess.Count = 0;
+    }
+    //even values
+    foreach (Guess guess in TrackList.Where(g => g.Value == 2))
+    {
+        guess.Count = guess.Count + 1;
+    }
+}
+//if first number is even
+else
+{
+    //odd values
+    foreach (Guess guess in TrackList.Where(g => g.Value == 1))
+    {
+        guess.Count = guess.Count + 1;
+    }
+    //even values
+    foreach (Guess guess in TrackList.Where(g => g.Value == 2))
+    {
+        guess.Count = 0;
+    }
+}
+*/

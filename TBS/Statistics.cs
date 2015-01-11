@@ -2,27 +2,30 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
-using System.Windows.Data;
 
 namespace TBS
 {
-    class Roll : INotifyPropertyChanged
+    class Statistics : INotifyPropertyChanged
     {
-        private List<int> _hitList;
-        public List<int> HitList
+        private int _recordCount = 0;
+        public int RecordCount
         {
-            get { return _hitList; }
-            set { _hitList = value; OnPropertyChanged("HitList"); }
+            get { return _recordCount; }
+            set { _recordCount = value; OnPropertyChanged("RecordCount"); }
         }
 
-        public Roll(List<int> roll)
+        private int _pageCount = 0;
+        public int PageCount
         {
-            HitList = roll;
+            get { return _pageCount; }
+            set { _pageCount = value; OnPropertyChanged("PageCount"); }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
         public void OnPropertyChanged(string name)
         {
             if (PropertyChanged != null)
