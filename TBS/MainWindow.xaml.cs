@@ -30,12 +30,14 @@ namespace TBS
         private readonly BackgroundWorker Poll;
         private BackgroundWorker StatusWorker;
         private BackgroundWorker TmpWorker;
-        private Poller Poller = new Poller();
+        private Poller Poller;
         private bool _instant = true;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            Poller = new Poller();
 
             StatusWorker = new BackgroundWorker();
             StatusWorker.DoWork += StatusWorker_DoWork;
@@ -56,7 +58,7 @@ namespace TBS
 
         private void TBS_ContentRendered(object sender, EventArgs e)
         {
-            if (double.Parse(DateTime.Now.ToString("yyyyMMddHHmmssffff")) > double.Parse("2015010122055118697"))
+            if (double.Parse(DateTime.Now.ToString("yyyyMMddHHmmssffff")) > double.Parse("201501231938430619"))
             {
                 MessageBox.Show("TRIAL VERSION EXPIRED!");
                 Application.Current.Shutdown();
@@ -137,7 +139,7 @@ namespace TBS
         private void PollWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             _instant = false;
-            DataContext = Poller;
+            //DataContext = Poller;
             Poll.RunWorkerAsync();
         }
 
@@ -150,13 +152,29 @@ namespace TBS
             DataContext = Poller;
             StatusWorker.RunWorkerAsync();
         }
+
+        private void ShowFromChange_Click(object sender, RoutedEventArgs e)
+        {
+            ShowFrom.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+            Poller.SelectPartTrackList();
+        }
     }
 
     public class StatusToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            string[] _statusArray = { "Loading...", "Requesting data...", "Updataing data...", "Generating new guess values...", "Checking guess values..." };
+            string[] _statusArray = 
+            { 
+                "Loading...", 
+                "Requesting data...", 
+                "Updataing data...", 
+                "Generating new guess values...", 
+                "Checking guess values...", 
+                "Selecting data...", 
+                "Generating new data tracking list...",
+                "No new data..."
+            };
             
             if (_statusArray.Contains(value.ToString()))
             {

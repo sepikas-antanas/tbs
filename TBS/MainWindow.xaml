@@ -36,12 +36,12 @@
                 </RibbonApplicationMenu>
             </Ribbon.ApplicationMenu>
             <RibbonTab Header="Settings">
-                <RibbonGroup Width="180" Header="Poll Options">
+                <RibbonGroup Width="201" Header="Request Options">
                     <StackPanel>
                         <RibbonTextBox 
                             Name="PollTimeout"
                             Margin="0,2,2,0"
-                            Label="Poll Timeout:"
+                            Label="Request Timeout:"
                             Text="{Binding PollTimeout, Converter={StaticResource MilisecondsToMinutesConverter}, UpdateSourceTrigger=Explicit}"/>
                         <RibbonButton Label="Update" 
                                 Name="UpdatePollTimeout"
@@ -70,20 +70,28 @@
                                 Text="{Binding DisplayRange, UpdateSourceTrigger=Explicit}" 
                                 Margin="2,0,2,0" />
                         <RibbonButton 
-                        	BorderThickness="1" 
-                        	BorderBrush="#FF423E3E"
-                        	Label="Update"
-                        	x:Name="GuessRangeUpdate"
-                        	Margin="2,0,2,0" Click="GuessRangeUpdate_Click" />
+                        	    BorderThickness="1" 
+                        	    BorderBrush="#FF423E3E"
+                        	    Label="Update"
+                        	    x:Name="GuessRangeUpdate"
+                        	    Margin="2,0,2,0" Click="GuessRangeUpdate_Click" />
                     </StackPanel>
                 </RibbonGroup>
-                <RibbonGroup Width="184" Header="Statistics">
+                <RibbonGroup Header="Statistics" Width="175">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal" Margin="4,0,2,0">
                             <TextBlock DockPanel.Dock="Left" FontSize="15" Text="Record: " />
                             <TextBlock DockPanel.Dock="Left" FontSize="15" Text="{Binding Statistics.RecordCount}" />
                         </StackPanel>
                     </StackPanel>
+                    <RibbonTextBox Label="Show From" Name="ShowFrom" Height="24" Text="{Binding ShowFrom, UpdateSourceTrigger=Explicit}" />
+                    <RibbonButton 
+                                Width="155"
+                        	    BorderThickness="1" 
+                        	    BorderBrush="#FF423E3E"
+                        	    Label="Update"
+                        	    x:Name="ShowFromChange"
+                        	    Margin="2,4,2,0" Click="ShowFromChange_Click" />
                 </RibbonGroup>
                 <RibbonGroup Header="Navigation">
                     <Grid>
@@ -99,7 +107,6 @@
                 </RibbonGroup>
             </RibbonTab>
         </Ribbon>
-
 
         <Grid DockPanel.Dock="Left" Height="Auto" Width="Auto">
             <Grid.RowDefinitions>

@@ -24,6 +24,13 @@ namespace TBS
             set { _pageCount = value; OnPropertyChanged("PageCount"); }
         }
 
+        private Guess _record;
+        public Guess Record
+        {
+            get { return _record; }
+            set { _record = value; OnPropertyChanged("Record"); }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public void OnPropertyChanged(string name)

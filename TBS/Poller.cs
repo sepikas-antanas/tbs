@@ -60,21 +60,12 @@ namespace TBS
             get { return _displayRange; }
             set { 
                 _displayRange = value;
-                Statistics.PageCount = TrackList.Count / DisplayRange;
+                //Statistics.PageCount = TrackList.Count / DisplayRange;
                 OnPropertyChanged("DisplayRange");  
             }
         }
-
-        private ObservableCollection<Guess> _trackList = new ObservableCollection<Guess>();
-        public ObservableCollection<Guess> TrackList
-        {
-            get { return _trackList; }
-            set { 
-                _trackList = value;
-                Statistics.PageCount = TrackList.Count / DisplayRange;
-                OnPropertyChanged("TrackList"); 
-            }
-        }
+        
+        private List<Guess> TrackList = new List<Guess>();
 
         private ObservableCollection<Guess> _partTrackList = new ObservableCollection<Guess>();
         public ObservableCollection<Guess> PartTrackList
@@ -104,6 +95,13 @@ namespace TBS
             set { _from = value; OnPropertyChanged("From"); }
         }
 
+        private int _showFrom = 0;
+        public int ShowFrom 
+        {
+            get { return _showFrom; }
+            set { _showFrom = value; OnPropertyChanged("ShowFrom"); }
+        }
+        
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name)
         {
@@ -144,12 +142,12 @@ namespace TBS
             if (RollList.Count() > 0) {
                 HtmlNode _td = table.SelectNodes("tr").Elements("td").Skip(1).Where(x => x.SelectSingleNode("span") != null).Take(1).FirstOrDefault();
                 Roll tmpRoll = new Roll(_td.SelectNodes("span").Select(s => int.Parse(s.SelectSingleNode("span").InnerText)).ToList());
-                /*
-                if (tmpRoll.HitList.SequenceEqual(RollList.First().HitList)) == true)
+                //if (tmpRoll.HitList.SequenceEqual(RollList.First().HitList)) == true)
+                if (Enumerable.SequenceEqual(tmpRoll.HitList, RollList.First().HitList))
                 {
+                    PollStatus = "No new data...";
                     return;
                 }
-                 * */
             }
 
             PollStatus = "Updataing data...";
@@ -159,41 +157,25 @@ namespace TBS
                 Roll roll = new Roll(_td.SelectNodes("span").Select(s => int.Parse(s.SelectSingleNode("span").InnerText)).ToList());
                 App.Current.Dispatcher.Invoke((Action)delegate { RollList.Add(roll); });   
             }
-            
-            CheckGuessValues();
-            GenerateGuessValues();
-            SelectPartTrackList();
-        }
 
-        public void GenerateTrackList()
-        {
-            Random rand = new Random();
-            TrackList = new ObservableCollection<Guess>();
-
-            for (int i = 0; i < GuessRange; i++)
-            {
-                TrackList.Add(new Guess(i + 1, rand.Next(1, 3), 0));
-            }
-        }
-
-        public void SelectPartTrackList()
-        {
-            PartTrackList = new ObservableCollection<Guess>(TrackList.Skip(From).Take(DisplayRange).OrderByDescending(g => g.Count));
-        }
-
-        private void GenerateGuessValues()
-        {
-            PollStatus = "Generating new guess values...";
-            Random rand = new Random();
-            foreach (Guess guess in TrackList)
-            {
-                guess.Value = rand.Next(1, 3);
-            }
-        }
-
-        private void CheckGuessValues()
-        {
+            /********************CheckGuessValues*******************/
             PollStatus = "Checking guess values...";
+
+            TrackList.All(g =>
+            {
+                if (RollList.First().HitList.First() % 2 != 0 ) 
+                {
+                    g.Count = (g.Value == 1 ? 0 : g.Count + 1);
+                }
+                else 
+                {
+                    g.Count = (g.Value == 2 ? 0 : g.Count + 1);
+                }
+                return true;
+            });
+
+            
+            /*
             //odd values
             foreach (Guess guess in TrackList.Where(g => g.Value == 1))
             {
@@ -204,39 +186,43 @@ namespace TBS
             {
                 guess.Count = (RollList.First().HitList.First() % 2 == 0 ? 0 : guess.Count + 1);
             }
-
+            */
             Statistics.RecordCount = TrackList.MaxBy(x => x.Count).Count;
+
+            /********************GenerateGuessValues*******************/
+            PollStatus = "Generating new guess values...";
+            Random rand = new Random();
+            TrackList.All(g => 
+            {
+                g.Value = rand.Next(1, 3);
+                return true;
+            });
+            /*
+            foreach (Guess guess in TrackList)
+            {
+                guess.Value = rand.Next(1, 3);
+            }
+             */
+
+            SelectPartTrackList();
+        }
+
+        public void GenerateTrackList()
+        {
+            PollStatus = "Generating new data tracking list...";
+            Random rand = new Random();
+            TrackList = new List<Guess>();
+            
+            for (int i = 0; i < GuessRange; i++)
+            {
+                TrackList.Add(new Guess(i + 1, rand.Next(1, 3), 0));
+            }
+        }
+
+        public void SelectPartTrackList()
+        {
+            PollStatus = "Selecting data...";
+            PartTrackList = new ObservableCollection<Guess>(TrackList.Where(g => g.Count >= ShowFrom).Skip(From).Take(DisplayRange).OrderByDescending(g => g.Count));
         }
     }
 }
-
-/*
-//if first number is odd
-if (RollList.First().HitList.First() % 2 != 0)
-{
-    //odd values
-    foreach (Guess guess in TrackList.Where(g => g.Value == 1))
-    {
-        guess.Count = 0;
-    }
-    //even values
-    foreach (Guess guess in TrackList.Where(g => g.Value == 2))
-    {
-        guess.Count = guess.Count + 1;
-    }
-}
-//if first number is even
-else
-{
-    //odd values
-    foreach (Guess guess in TrackList.Where(g => g.Value == 1))
-    {
-        guess.Count = guess.Count + 1;
-    }
-    //even values
-    foreach (Guess guess in TrackList.Where(g => g.Value == 2))
-    {
-        guess.Count = 0;
-    }
-}
-*/
