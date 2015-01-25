@@ -58,6 +58,7 @@ namespace TBS
 
         private void TBS_ContentRendered(object sender, EventArgs e)
         {
+            /*
             if (double.Parse(DateTime.Now.ToString("yyyyMMddHHmmssffff")) > double.Parse("201501231938430619"))
             {
                 MessageBox.Show("TRIAL VERSION EXPIRED!");
@@ -67,6 +68,8 @@ namespace TBS
             {
                 Poll.RunWorkerAsync();
             }
+            */
+            Poll.RunWorkerAsync();
         }
 
         private void Refresh_Click(object sender, RoutedEventArgs e)
@@ -140,7 +143,18 @@ namespace TBS
         {
             _instant = false;
             //DataContext = Poller;
-            Poll.RunWorkerAsync();
+
+            if (double.Parse(DateTime.Now.ToString("yyyyMMddHHmmssffff")) > double.Parse("201501261938430619"))
+            {
+                var ok = MessageBox.Show("TRIAL VERSION EXPIRED!", "ALERT", MessageBoxButton.OK, MessageBoxImage.Warning);
+                if (ok == MessageBoxResult.OK) {
+                    Application.Current.Shutdown();
+                }
+            }
+            else
+            {
+                Poll.RunWorkerAsync();
+            }
         }
 
         private void StatusWorker_DoWork(object sender, DoWorkEventArgs e)

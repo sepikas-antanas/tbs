@@ -173,22 +173,50 @@ namespace TBS
                 }
                 return true;
             });
-
-            
-            /*
-            //odd values
-            foreach (Guess guess in TrackList.Where(g => g.Value == 1))
+            /**********************Statistics*****************************/
+            if (Statistics.RecordCount < TrackList.MaxBy(x => x.Count).Count)
             {
-                guess.Count = (RollList.First().HitList.First() % 2 != 0 ? 0 : guess.Count + 1);
+                Statistics.RecordCount = TrackList.MaxBy(x => x.Count).Count;
             }
-            //even values
-            foreach (Guess guess in TrackList.Where(g => g.Value == 2))
-            {
-                guess.Count = (RollList.First().HitList.First() % 2 == 0 ? 0 : guess.Count + 1);
-            }
-            */
-            Statistics.RecordCount = TrackList.MaxBy(x => x.Count).Count;
 
+            if (RollList.First().HitList.First() % 2 != 0 && Statistics.Next == 2)
+            {
+                Statistics.OddEvenRecord = Statistics.OddEvenRecord + 1;
+            }
+
+            if (RollList.First().HitList.First() % 2 == 0 && Statistics.Next == 1) 
+            {
+                Statistics.OddEvenRecord = Statistics.OddEvenRecord + 1;
+            }
+
+            Statistics.OddCount = TrackList.Where(x => x.Value == 1).Count();
+            Statistics.EvenCount = TrackList.Where(x => x.Value == 2).Count();
+            Statistics.Next = (Statistics.OddCount > Statistics.EvenCount ? 1 : 2);
+
+            /**********************Statistics18*****************************/
+            if (Statistics.RecordCount == 18) 
+            {
+                Statistics.OddCount18 = TrackList.Where(x => x.Value == 1 && x.Count >= 18).Count();
+                Statistics.EvenCount18 = TrackList.Where(x => x.Value == 2 && x.Count >= 18).Count();
+                Statistics.Next18 = (Statistics.OddCount18 > Statistics.EvenCount18 ? 1 : 2);
+            }
+
+            if (Statistics.RecordCount > 18) 
+            {
+                if (RollList.First().HitList.First() % 2 != 0 && Statistics.Next18 == 2)
+                {
+                    Statistics.OddEvenRecord18 = Statistics.OddEvenRecord18 + 1;
+                }
+
+                if (RollList.First().HitList.First() % 2 == 0 && Statistics.Next18 == 1) 
+                {
+                    Statistics.OddEvenRecord18 = Statistics.OddEvenRecord18 + 1;
+                }
+
+                Statistics.OddCount18 = TrackList.Where(x => x.Value == 1 && x.Count >= 18).Count();
+                Statistics.EvenCount18 = TrackList.Where(x => x.Value == 2 && x.Count >= 18).Count();
+                Statistics.Next18 = (Statistics.OddCount18 > Statistics.EvenCount18 ? 1 : 2);
+            }
             /********************GenerateGuessValues*******************/
             PollStatus = "Generating new guess values...";
             Random rand = new Random();
@@ -197,12 +225,6 @@ namespace TBS
                 g.Value = rand.Next(1, 3);
                 return true;
             });
-            /*
-            foreach (Guess guess in TrackList)
-            {
-                guess.Value = rand.Next(1, 3);
-            }
-             */
 
             SelectPartTrackList();
         }
@@ -217,6 +239,10 @@ namespace TBS
             {
                 TrackList.Add(new Guess(i + 1, rand.Next(1, 3), 0));
             }
+
+            Statistics.OddCount = TrackList.Where(x => x.Value == 1).Count();
+            Statistics.EvenCount = TrackList.Where(x => x.Value == 2).Count();
+            Statistics.Next = (Statistics.OddCount > Statistics.EvenCount ? 1 : 2);
         }
 
         public void SelectPartTrackList()

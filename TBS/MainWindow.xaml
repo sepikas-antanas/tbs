@@ -105,6 +105,50 @@
                         </StackPanel>
                     </Grid>
                 </RibbonGroup>
+                <RibbonGroup Header="Votes">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Grid.Row="0" Text="Odd Count: " />
+                        <TextBlock Grid.Column="1" Grid.Row="0" Text="{Binding Statistics.OddCount}" />
+                        <TextBlock Grid.Column="0" Grid.Row="1" Text="Even Count: " />
+                        <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Statistics.EvenCount}" />
+                        <TextBlock Grid.Column="0" Grid.Row="2" Text="Next Should Be: " />
+                        <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding Statistics.Next}" />
+                        <TextBlock Grid.Column="0" Grid.Row="3" Text="Wrong Guess Record: " />
+                        <TextBlock Grid.Column="1" Grid.Row="3" Text="{Binding Statistics.OddEvenRecord}" />
+                    </Grid>
+                </RibbonGroup>
+                <RibbonGroup Header="Votes From 18 Wrong Guesses">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Grid.Row="0" Text="Odd Count: " />
+                        <TextBlock Grid.Column="1" Grid.Row="0" Text="{Binding Statistics.OddCount18}" />
+                        <TextBlock Grid.Column="0" Grid.Row="1" Text="Even Count: " />
+                        <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Statistics.EvenCount18}" />
+                        <TextBlock Grid.Column="0" Grid.Row="2" Text="Next Should Be: " />
+                        <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding Statistics.Next18}" />
+                        <TextBlock Grid.Column="0" Grid.Row="3" Text="Wrong Guess Record: " />
+                        <TextBlock Grid.Column="1" Grid.Row="3" Text="{Binding Statistics.OddEvenRecord18}" />
+                    </Grid>
+                </RibbonGroup>
             </RibbonTab>
         </Ribbon>
 
