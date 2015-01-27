@@ -139,6 +139,8 @@ namespace TBS
             HtmlDocument document = new HtmlWeb().Load(_address + DateTime.Now.Year + "-" + DateTime.Now.Month + "-" + DateTime.Now.Day + "/1");
             HtmlNode table = document.GetElementbyId(_tableId).SelectSingleNode("//tbody");
 
+            int _localNext = Statistics.Next;
+
             if (RollList.Count() > 0) {
                 HtmlNode _td = table.SelectNodes("tr").Elements("td").Skip(1).Where(x => x.SelectSingleNode("span") != null).Take(1).FirstOrDefault();
                 Roll tmpRoll = new Roll(_td.SelectNodes("span").Select(s => int.Parse(s.SelectSingleNode("span").InnerText)).ToList());
@@ -179,12 +181,12 @@ namespace TBS
                 Statistics.RecordCount = TrackList.MaxBy(x => x.Count).Count;
             }
 
-            if (RollList.First().HitList.First() % 2 != 0 && Statistics.Next == 2)
+            if (RollList.First().HitList.First() % 2 != 0 && Statistics.Next == 1)
             {
                 Statistics.OddEvenRecord = Statistics.OddEvenRecord + 1;
             }
 
-            if (RollList.First().HitList.First() % 2 == 0 && Statistics.Next == 1) 
+            if (RollList.First().HitList.First() % 2 == 0 && Statistics.Next == 2) 
             {
                 Statistics.OddEvenRecord = Statistics.OddEvenRecord + 1;
             }
@@ -196,25 +198,25 @@ namespace TBS
             /**********************Statistics18*****************************/
             if (Statistics.RecordCount == 18) 
             {
-                Statistics.OddCount18 = TrackList.Where(x => x.Value == 1 && x.Count >= 18).Count();
-                Statistics.EvenCount18 = TrackList.Where(x => x.Value == 2 && x.Count >= 18).Count();
+                Statistics.OddCount18 = (from m in TrackList where m.Value == 1 && m.Count >= 18 select m).Count();
+                Statistics.EvenCount18 = (from m in TrackList where m.Value == 2 && m.Count >= 18 select m).Count();
                 Statistics.Next18 = (Statistics.OddCount18 > Statistics.EvenCount18 ? 1 : 2);
             }
 
-            if (Statistics.RecordCount > 18) 
+            if (Statistics.RecordCount > 1) 
             {
-                if (RollList.First().HitList.First() % 2 != 0 && Statistics.Next18 == 2)
+                if (RollList.First().HitList.First() % 2 != 0 && Statistics.Next18 == 1)
                 {
                     Statistics.OddEvenRecord18 = Statistics.OddEvenRecord18 + 1;
                 }
 
-                if (RollList.First().HitList.First() % 2 == 0 && Statistics.Next18 == 1) 
+                if (RollList.First().HitList.First() % 2 == 0 && Statistics.Next18 == 2) 
                 {
                     Statistics.OddEvenRecord18 = Statistics.OddEvenRecord18 + 1;
                 }
 
-                Statistics.OddCount18 = TrackList.Where(x => x.Value == 1 && x.Count >= 18).Count();
-                Statistics.EvenCount18 = TrackList.Where(x => x.Value == 2 && x.Count >= 18).Count();
+                Statistics.OddCount18 = (from m in TrackList where m.Value == 1 && m.Count >= 18 select m).Count();
+                Statistics.EvenCount18 = (from m in TrackList where m.Value == 2 && m.Count >= 18 select m).Count();
                 Statistics.Next18 = (Statistics.OddCount18 > Statistics.EvenCount18 ? 1 : 2);
             }
             /********************GenerateGuessValues*******************/
@@ -222,7 +224,7 @@ namespace TBS
             Random rand = new Random();
             TrackList.All(g => 
             {
-                g.Value = rand.Next(1, 3);
+                g.Value = (g.Value == _localNext ? g.Value : (g.Value == 1 ? 2 : 1));
                 return true;
             });
 

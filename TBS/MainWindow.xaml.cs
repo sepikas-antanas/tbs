@@ -142,9 +142,8 @@ namespace TBS
         private void PollWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             _instant = false;
-            //DataContext = Poller;
-
-            if (double.Parse(DateTime.Now.ToString("yyyyMMddHHmmssffff")) > double.Parse("201501261938430619"))
+            //Poll.RunWorkerAsync();
+            if (double.Parse(DateTime.Now.ToString("yyyyMMddHHmmssffff")) > double.Parse("201501281938430619"))
             {
                 var ok = MessageBox.Show("TRIAL VERSION EXPIRED!", "ALERT", MessageBoxButton.OK, MessageBoxImage.Warning);
                 if (ok == MessageBoxResult.OK) {
