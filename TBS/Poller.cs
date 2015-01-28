@@ -224,7 +224,8 @@ namespace TBS
             Random rand = new Random();
             TrackList.All(g => 
             {
-                g.Value = (g.Value == _localNext ? g.Value : (g.Value == 1 ? 2 : 1));
+                //g.Value = (g.Value == _localNext ? g.Value : (g.Value == 1 ? 2 : 1));
+                g.Value = rand.Next(1, 3);
                 return true;
             });
 
