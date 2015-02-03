@@ -31,11 +31,19 @@ namespace TBS
             set { _count = value; OnPropertyChanged("Count"); }
         }
 
-        public Guess(int index, int value, int count)
+        private int _previous = 0;
+        public int Previous
+        {
+            get { return _previous; }
+            set { _previous = value; OnPropertyChanged("Previous"); }
+        }
+
+        public Guess(int index, int value, int count, int previous)
         {
             Index = index;
             Value = value;
             Count = count;
+            Previous = previous;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

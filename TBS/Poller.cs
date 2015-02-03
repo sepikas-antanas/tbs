@@ -32,7 +32,7 @@ namespace TBS
             get { return _status; }
             set { _status = value; OnPropertyChanged("PollStatus"); }
         }
-        
+
         private int _timeout = 300000;
         public int PollTimeout
         {
@@ -58,13 +58,14 @@ namespace TBS
         public int DisplayRange
         {
             get { return _displayRange; }
-            set { 
+            set
+            {
                 _displayRange = value;
                 //Statistics.PageCount = TrackList.Count / DisplayRange;
-                OnPropertyChanged("DisplayRange");  
+                OnPropertyChanged("DisplayRange");
             }
         }
-        
+
         private List<Guess> TrackList = new List<Guess>();
 
         private ObservableCollection<Guess> _partTrackList = new ObservableCollection<Guess>();
@@ -96,12 +97,12 @@ namespace TBS
         }
 
         private int _showFrom = 0;
-        public int ShowFrom 
+        public int ShowFrom
         {
             get { return _showFrom; }
             set { _showFrom = value; OnPropertyChanged("ShowFrom"); }
         }
-        
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name)
         {
@@ -118,7 +119,8 @@ namespace TBS
 
         public void Process(bool instant = false)
         {
-            if (instant == true) {
+            if (instant == true)
+            {
                 PollTimeElapsed = 0;
                 RequestData();
                 return;
@@ -141,7 +143,8 @@ namespace TBS
 
             int _localNext = Statistics.Next;
 
-            if (RollList.Count() > 0) {
+            if (RollList.Count() > 0)
+            {
                 HtmlNode _td = table.SelectNodes("tr").Elements("td").Skip(1).Where(x => x.SelectSingleNode("span") != null).Take(1).FirstOrDefault();
                 Roll tmpRoll = new Roll(_td.SelectNodes("span").Select(s => int.Parse(s.SelectSingleNode("span").InnerText)).ToList());
                 //if (tmpRoll.HitList.SequenceEqual(RollList.First().HitList)) == true)
@@ -157,7 +160,7 @@ namespace TBS
             foreach (HtmlNode _td in table.SelectNodes("tr").Elements("td").Skip(1).Where(x => x.SelectSingleNode("span") != null).Take(10))
             {
                 Roll roll = new Roll(_td.SelectNodes("span").Select(s => int.Parse(s.SelectSingleNode("span").InnerText)).ToList());
-                App.Current.Dispatcher.Invoke((Action)delegate { RollList.Add(roll); });   
+                App.Current.Dispatcher.Invoke((Action)delegate { RollList.Add(roll); });
             }
 
             /********************CheckGuessValues*******************/
@@ -165,11 +168,11 @@ namespace TBS
 
             TrackList.All(g =>
             {
-                if (RollList.First().HitList.First() % 2 != 0 ) 
+                if (RollList.First().HitList.First() % 2 != 0)
                 {
                     g.Count = (g.Value == 1 ? 0 : g.Count + 1);
                 }
-                else 
+                else
                 {
                     g.Count = (g.Value == 2 ? 0 : g.Count + 1);
                 }
@@ -186,7 +189,7 @@ namespace TBS
                 Statistics.OddEvenRecord = Statistics.OddEvenRecord + 1;
             }
 
-            if (RollList.First().HitList.First() % 2 == 0 && Statistics.Next == 2) 
+            if (RollList.First().HitList.First() % 2 == 0 && Statistics.Next == 2)
             {
                 Statistics.OddEvenRecord = Statistics.OddEvenRecord + 1;
             }
@@ -196,21 +199,21 @@ namespace TBS
             Statistics.Next = (Statistics.OddCount > Statistics.EvenCount ? 1 : 2);
 
             /**********************Statistics18*****************************/
-            if (Statistics.RecordCount == 18) 
+            if (Statistics.RecordCount == 18)
             {
                 Statistics.OddCount18 = (from m in TrackList where m.Value == 1 && m.Count >= 18 select m).Count();
                 Statistics.EvenCount18 = (from m in TrackList where m.Value == 2 && m.Count >= 18 select m).Count();
                 Statistics.Next18 = (Statistics.OddCount18 > Statistics.EvenCount18 ? 1 : 2);
             }
 
-            if (Statistics.RecordCount > 1) 
+            if (Statistics.RecordCount > 1)
             {
                 if (RollList.First().HitList.First() % 2 != 0 && Statistics.Next18 == 1)
                 {
                     Statistics.OddEvenRecord18 = Statistics.OddEvenRecord18 + 1;
                 }
 
-                if (RollList.First().HitList.First() % 2 == 0 && Statistics.Next18 == 2) 
+                if (RollList.First().HitList.First() % 2 == 0 && Statistics.Next18 == 2)
                 {
                     Statistics.OddEvenRecord18 = Statistics.OddEvenRecord18 + 1;
                 }
@@ -222,10 +225,29 @@ namespace TBS
             /********************GenerateGuessValues*******************/
             PollStatus = "Generating new guess values...";
             Random rand = new Random();
-            TrackList.All(g => 
+            TrackList.All(g =>
             {
-                //g.Value = (g.Value == _localNext ? g.Value : (g.Value == 1 ? 2 : 1));
-                g.Value = rand.Next(1, 3);
+                if ((RollList.First().HitList.First() % 2 != 0 && g.Value == 1) || (RollList.First().HitList.First() % 2 == 0 && g.Value == 2))
+                {
+                    g.Previous = g.Value;
+                    g.Value = rand.Next(1, 3);
+                }
+                else if (g.Previous == g.Value)
+                {
+                    g.Previous = g.Value;
+                    g.Value = (g.Value == 1 ? 2 : 1);
+                }
+                else if (g.Previous != g.Value && (RollList.First().HitList.First() % 2 != 0 && g.Value == 1) || (RollList.First().HitList.First() % 2 == 0 && g.Value == 2))
+                {
+                    g.Previous = g.Value;
+                    g.Value = (g.Value == 1 ? 2 : 1);
+                }
+                else
+                {
+                    g.Previous = g.Value;
+                    g.Value = rand.Next(1, 3);
+                }
+
                 return true;
             });
 
@@ -237,10 +259,11 @@ namespace TBS
             PollStatus = "Generating new data tracking list...";
             Random rand = new Random();
             TrackList = new List<Guess>();
-            
+
             for (int i = 0; i < GuessRange; i++)
             {
-                TrackList.Add(new Guess(i + 1, rand.Next(1, 3), 0));
+                int random = rand.Next(1, 3);
+                TrackList.Add(new Guess(i + 1, random, 0, random));
             }
 
             Statistics.OddCount = TrackList.Where(x => x.Value == 1).Count();
